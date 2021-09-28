@@ -1,4 +1,5 @@
-import argparse, tweepy
+import argparse, tweepy, hashlib
+from cryptography.fernet import Fernet
 
 if __name__ == "__main__":
     # Handle command-line arguments
@@ -34,10 +35,16 @@ if __name__ == "__main__":
     thread = tweets_listener.filter(follow=[1440758875955732486], threaded=True)
     thread.join()
     print(question)
-    # Encrypt question
-    # Compute checksum of encrypted question
-    # Build question payload (tuple:encrypt/decrypt key and encrypted text)
-    # Send question payload to server
+
+    # Encrypt question and compute checksum
+    key = Fernet.generate_key()
+    encryption = Fernet(key)
+    encrypted_question = encryption.encrypt(b+question)
+    checksum = hashlib.md5(encrypted_question.encode())
+
+    #Build payload and send to server
+    payload = (key, encrypted_question, checksum.hexdigest())
+
     # Wait for answer payload
     # Recieve answer payload
     # Deconstruct answer payload (verify checksum and decrypt answer)
