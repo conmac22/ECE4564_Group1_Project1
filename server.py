@@ -1,9 +1,10 @@
 # Watson API Key: EUOrEO015oZ0rBlILjh3i8FgCq_Hhc9Woz1dn-PeTXbG
 # Watson URL: https://api.us-east.text-to-speech.watson.cloud.ibm.com/instances/d1180113-b514-46c0-823c-3c542ed0425b
 
+from ibm_watson import TextToSpeechV1
+from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+
 if __name__ == "__main__":
-    from ibm_watson import TextToSpeechV1
-    from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 
     authenticator = IAMAuthenticator('EUOrEO015oZ0rBlILjh3i8FgCq_Hhc9Woz1dn-PeTXbG')
     text_to_speech = TextToSpeechV1(authenticator=authenticator)
