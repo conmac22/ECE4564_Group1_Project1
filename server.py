@@ -2,13 +2,13 @@ from ibm_watson import TextToSpeechV1
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from playsound import playsound
 import wolframalpha
-import key
+import ServerKeys
 
 if __name__ == "__main__":
-    authenticator = IAMAuthenticator(key.watsonKey)
+    authenticator = IAMAuthenticator(ServerKeys.watsonKey)
     text_to_speech = TextToSpeechV1(authenticator=authenticator)
 
-    text_to_speech.set_service_url(key.watsonURL)
+    text_to_speech.set_service_url(ServerKeys.watsonURL)
 
     # Pull question from Twitter-shit
     question = input('Ask a question:')
@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     #playsound('hello_world.wav')
 
-    client = wolframalpha.Client(key.app_id)
+    client = wolframalpha.Client(ServerKeys.app_id)
     res = client.query(question)
     answer = next(res.results).text
 
