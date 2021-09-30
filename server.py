@@ -54,7 +54,7 @@ if __name__ == "__main__":
         print(encrypted_answer)
 
         checksum = hashlib.md5(encrypted_answer).hexdigest()
-        payload = (key, andrypted_answer, checksum)
+        payload = (encrypted_answer, checksum)
         print('Answer payload: ', end='')
         print(payload)
 
