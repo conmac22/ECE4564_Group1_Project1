@@ -16,6 +16,7 @@ if __name__ == "__main__":
     # Set up server
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((SERVER_IP, SERVER_PORT))
+    print("[Client 01]-Connecting to " + str(SERVER_IP) + " on port " + str(SERVER_PORT))
 
     # Log-in for Twitter API access
     CONSUMER_KEY = ClientKeys.CONSUMER_KEY
@@ -31,32 +32,33 @@ if __name__ == "__main__":
 
     class StreamAndServer(tweepy.Stream):
         def on_status(self, tweet):
-            print('New question found: ' + tweet.text)
+            print('[Client 03]-New question found: ' + tweet.text)
             self.send(tweet.text)
 
         def send(self, question):
             # Build question payload
             key = Fernet.generate_key()
-            print('Generated encryption key: ', end='')
+            print('[Client 04]-Generated encryption key: ', end='')
             print(key)
 
             encryption = Fernet(key)
             encrypted_question = encryption.encrypt(question.encode())
-            print('Cipher text: ', end='')
+            print('Client 05]-Cipher text: ', end='')
             print(encrypted_question)
 
-            #checksum = hashlib.md5(encrypted_question)
-            payload = (key, encrypted_question)
-            print('Question payload: ', end='')
+            checksum = hashlib.md5(encrypted_question).hexdigest()
+            payload = (key, encrypted_question, checksum)
+            print('[Client 06]-Question payload: ', end='')
             print(payload)
 
             # Send payload to server
+            print('[Client 07]-Sending question: ', end='')
             sock.send(pickle.dumps(payload))
             server_response = sock.recv(SOCKET_SIZE)
             answer = pickle.loads(server_response)
 
     try:
-        print('Listening for tweets from Twitter API that contain questions')
+        print('[Client 02]-Listening for tweets from Twitter API that contain questions')
         tweets_listener = StreamAndServer(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
         tweets_listener.filter(follow=[ClientKeys.TWITTER_ID])
     except KeyboardInterrupt:
