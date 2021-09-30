@@ -1,4 +1,4 @@
-import argparse, tweepy, hashlib, pickle, socket
+import argparse, tweepy, hashlib, pickle, socket, ClientKeys
 from cryptography.fernet import Fernet
 
 if __name__ == "__main__":
@@ -14,41 +14,55 @@ if __name__ == "__main__":
     SOCKET_SIZE = args.z
 
     # Log-in for Twitter API access
-    CONSUMER_KEY = 'z3zfmCPKex24aihq6liafKVEw'
-    CONSUMER_SECRET = 'hXxj4M7OtLnT6fQEQyQcBCgiAudYiCSh4taiWjBIip6iYULFgM'
-    ACCESS_TOKEN = '1440758875955732486-CGSl8dGWtKM7x81yvYWbWLKh2Cy1q8'
-    ACCESS_TOKEN_SECRET = 'rAkcDimN9I4AxEUio44NCpN2Ip6ZNINM48YFlIEFSz7px'
+    CONSUMER_KEY = ClientKeys.CONSUMER_KEY
+    CONSUMER_SECRET = ClientKeys.CONSUMER_SECRET
+    ACCESS_TOKEN = ClientKeys.ACCESS_TOKEN
+    ACCESS_TOKEN_SECRET = ClientKeys.ACCESS_TOKEN_SECRET
 
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
 
     # Extract tweet from question
     api = tweepy.API(auth)
-    question = 'test'
-    # class StreamEcho(tweepy.Stream):
-    #     def on_status(self, tweet):
-    #         global question
-    #         question = tweet.text
-    #         tweets_listener.disconnect()
+
+    class StreamAndServer(tweepy.Stream):
+        def on_status(self, tweet):
+            print('New question found: ' + tweet.text)
+            self.send(tweet.text)
+
+        def send(self, question):
+            # Build question payload
+            key = Fernet.generate_key()
+            print('Generated encryption key: ', end='')
+            print(key)
+
+            encryption = Fernet(key)
+            encrypted_question = encryption.encrypt(question.encode())
+            print('Cipher text: ', end='')
+            print(encrypted_question)
+
+            checksum = hashlib.md5(encrypted_question)
+            payload = (key, encrypted_question, checksum)
+            print('Question payload: ', end='')
+            print(payload)
+
+            # Send payload to server
+
+    try:
+        print('Listening for tweets from Twitter API that contain questions')
+        tweets_listener = StreamAndServer(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+        tweets_listener.filter(follow=[ClientKeys.TWITTER_ID])
+    except KeyboardInterrupt:
+        tweets_listener.disconnect()
+        print('done')
+
+    # # Send question to server
+    # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # sock.connect((SERVER_IP, SERVER_PORT))
+    # sock.send(pickle.dumps(payload))
     #
-    # tweets_listener = StreamEcho(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-    # thread = tweets_listener.filter(follow=[1440758875955732486], threaded=True)
-    # thread.join()
-
-    # Encrypt question, compute checksum, and build payload
-    key = Fernet.generate_key()
-    encryption = Fernet(key)
-    encrypted_question = encryption.encrypt(question.encode())
-    checksum = hashlib.md5(encrypted_question)
-    payload = (key, encrypted_question, checksum.hexdigest())
-
-    # Send question to server
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((SERVER_IP, SERVER_PORT))
-    sock.send(pickle.dumps(payload))
-
-    server_response = sock.recv(SOCKET_SIZE)
-    answer = pickle.loads(server_response)
+    # server_response = sock.recv(SOCKET_SIZE)
+    # answer = pickle.loads(server_response)
 
     # Deconstruct answer payload (verify checksum and decrypt answer)
     # Display answer on monitor
