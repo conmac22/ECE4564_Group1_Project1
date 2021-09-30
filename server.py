@@ -1,9 +1,9 @@
 # from ibm_watson import TextToSpeechV1
 # from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 # from playsound import playsound
-# import wolframalpha
-# import ServerKeys
-import argparse, pickle, socket
+import wolframalpha
+import ServerKeys
+import argparse, pickle, socket, hashlib
 from cryptography.fernet import Fernet
 
 if __name__ == "__main__":
@@ -17,6 +17,9 @@ if __name__ == "__main__":
     parser.add_argument('-sp', type=int, required=True, help="Server Port Number", metavar="SERVER_PORT")
     parser.add_argument('-z', type=int, required=True, help="Socket Size", metavar="SOCKET_SIZE")
     args = parser.parse_args()
+
+    # Get wolframalpha key
+    client = wolframalpha.Client(ServerKeys.app_id)
 
     # Get question from server
     SERVER_PORT = args.sp
@@ -33,8 +36,34 @@ if __name__ == "__main__":
         encryption = Fernet(payload[0])
         question = encryption.decrypt(question_encrypted).decode()
         print(question)
+
+        # Get answer
+        res = client.query(question)
+        answer = next(res.results).text
+        print('Answer: ', end='')
+        print(answer)
+
+        # Build answer payload
+        key = Fernet.generate_key()
+        print('Generated encryption key: ', end='')
+        print(key)
+
+        encryption = Fernet(key)
+        encrypted_answer = encryption.encrypt(answer.encode())
+        print('Cipher text', end='')
+        print(encrypted_answer)
+
+        checksum = hashlib.md5(encrypted_answer).hexdigest()
+        payload = (key, andrypted_answer, checksum)
+        print('Answer payload: ', end='')
+        print(payload)
+
+        # Send payload to client
+        print('Sending answer: ', end='')
+        sock.send(pickle.dumps(payload))
+
         client.close()
-        # Comment out break to make server infinite 
+        # Comment out break to make server infinite
         break;
     #
     # with open('question.wav', 'wb') as audio_file:
@@ -47,8 +76,3 @@ if __name__ == "__main__":
     #
     # #playsound('hello_world.wav')
     #
-    # client = wolframalpha.Client(ServerKeys.app_id)
-    # res = client.query(question)
-    # answer = next(res.results).text
-    #
-    # print(answer)
