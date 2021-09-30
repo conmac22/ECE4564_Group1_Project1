@@ -13,6 +13,10 @@ if __name__ == "__main__":
     SERVER_PORT = args.sp
     SOCKET_SIZE = args.z
 
+    # Set up server
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((SERVER_IP, SERVER_PORT))
+
     # Log-in for Twitter API access
     CONSUMER_KEY = ClientKeys.CONSUMER_KEY
     CONSUMER_SECRET = ClientKeys.CONSUMER_SECRET
@@ -47,6 +51,9 @@ if __name__ == "__main__":
             print(payload)
 
             # Send payload to server
+            sock.send(pickle.dumps(payload))
+            server_response = sock.recv(SOCKET_SIZE)
+            answer = pickle.loads(server_response)
 
     try:
         print('Listening for tweets from Twitter API that contain questions')
@@ -56,13 +63,7 @@ if __name__ == "__main__":
         tweets_listener.disconnect()
         print('done')
 
-    # # Send question to server
-    # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # sock.connect((SERVER_IP, SERVER_PORT))
-    # sock.send(pickle.dumps(payload))
-    #
-    # server_response = sock.recv(SOCKET_SIZE)
-    # answer = pickle.loads(server_response)
+
 
     # Deconstruct answer payload (verify checksum and decrypt answer)
     # Display answer on monitor
