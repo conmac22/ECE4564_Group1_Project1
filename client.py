@@ -45,8 +45,8 @@ if __name__ == "__main__":
             print('Cipher text: ', end='')
             print(encrypted_question)
 
-            checksum = hashlib.md5(encrypted_question)
-            payload = (key, encrypted_question, checksum)
+            #checksum = hashlib.md5(encrypted_question)
+            payload = (key, encrypted_question)
             print('Question payload: ', end='')
             print(payload)
 
