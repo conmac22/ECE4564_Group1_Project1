@@ -1,4 +1,6 @@
-import argparse, tweepy, hashlib, pickle, socket, ClientKeys, sys
+from ibm_watson import TextToSpeechV1
+from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+import argparse, tweepy, hashlib, pickle, socket, ClientKeys, ServerKeys, sys, vlc
 from cryptography.fernet import Fernet
 
 if __name__ == "__main__":
@@ -56,23 +58,40 @@ if __name__ == "__main__":
             print('[Client 07]-Sending question: ', end='')
             print(pickled_payload)
             sock.send(pickled_payload)
+
             server_response = sock.recv(SOCKET_SIZE)
             answer_payload = pickle.loads(server_response)
             print('[Client 08]-Received data: ', end='')
             print(answer_payload)
-            answer_encrypted = server_response[0]
-            answer_checksum_expected = server_response[1]
+            answer_encrypted = answer_payload[0]
+            answer_checksum_expected = answer_payload[1]
 
             # Verify checksum
-            answer_checksum_actual = hashlib.md5(answer).hexdigest()
+            answer_checksum_actual = hashlib.md5(answer_encrypted).hexdigest()
             if answer_checksum_actual != answer_checksum_expected:
                 print("Answer checksum is incorrect!")
                 sys.exit(1)
             print('[Client 09]-Decrypt key: ', end='')
             print(key)
-            answer = encryption.decrypt(answer_encrypted.decode())
+            answer = encryption.decrypt(answer_encrypted).decode()
             print('[Client 10]-Plain text: ', end='')
             print(answer)
+
+            # Play answer
+            authenticator = IAMAuthenticator(ServerKeys.watsonKey)
+            text_to_speech = TextToSpeechV1(authenticator=authenticator)
+            text_to_speech.set_service_url(ServerKeys.watsonURL)
+            with open('answer.wav', 'wb') as audio_file:
+                audio_file.write(
+                    text_to_speech.synthesize(
+                        answer,
+                        voice='en-US_AllisonV3Voice',
+                        accept='audio/wav'
+                    ).get_result().content)
+            player = vlc.MediaPlayer('answer.wav')
+            print('[Client 11]-Speaking answer: ', end='')
+            print(answer)
+            player.play()
 
     try:
         print('[Client 02]-Listening for tweets from Twitter API that contain questions')
@@ -81,11 +100,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         tweets_listener.disconnect()
         print('done')
-
-
-
-    # Deconstruct answer payload (verify checksum and decrypt answer)
-    # Display answer on monitor
-    # Send answer to IBM Watson
-    # Download answer audio from IBM Watson
-    # Play answer audio
