@@ -1,8 +1,6 @@
 from ibm_watson import TextToSpeechV1
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
-import wolframalpha
-import ServerKeys
-import argparse, pickle, socket
+import wolframalpha, ServerKeys, vlc, argparse, pickle, socket, hashlib
 from cryptography.fernet import Fernet
 
 if __name__ == "__main__":
@@ -11,7 +9,7 @@ if __name__ == "__main__":
     text_to_speech.set_service_url(ServerKeys.watsonURL)
     wClient = wolframalpha.Client(ServerKeys.app_id)
 
-    # Pull question from Twitter-shit
+    # Pull question from Twitter
     parser = argparse.ArgumentParser()
     parser.add_argument('-sp', type=int, required=True, help="Server Port Number", metavar="SERVER_PORT")
     parser.add_argument('-z', type=int, required=True, help="Socket Size", metavar="SOCKET_SIZE")
@@ -29,15 +27,14 @@ if __name__ == "__main__":
         payload_serialized = client.recv(SOCKET_SIZE)
         payload = pickle.loads(payload_serialized)
         question_encrypted = payload[1]
-        encryption = Fernet(payload[0]
+        encryption = Fernet(payload[0])
         checksum = payload[2]
-
-        #Verify checksum
+        
+        #verify Checksum
         vChecksum = hashlib.md5(question_encrypted).hexdigest()
         if checksum != vChecksum:
             print('Checksum does not match')
         
-        #Get question
         question = encryption.decrypt(question_encrypted).decode()
         print(question)
         
@@ -48,8 +45,8 @@ if __name__ == "__main__":
                     voice='en-US_AllisonV3Voice',
                     accept='audio/wav'
                 ).get_result().content)
-    
-        #playsound('hello_world.wav')
+        player = vlc.MediaPlayer('question.wav')
+        player.play()
         
         # Get answer
         res = wClient.query(question)
@@ -73,9 +70,13 @@ if __name__ == "__main__":
         print(payload)
 
         # Send payload to client
+        pickled_payload = pickle.dumps(payload)
         print('Sending answer: ', end='')
-        sock.send(pickle.dumps(payload))
+        client.send(pickled_payload)
         
         client.close()
         # Comment out break to make server infinite 
-        break;
+        
+    
+
+
