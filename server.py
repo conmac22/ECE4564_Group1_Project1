@@ -29,7 +29,15 @@ if __name__ == "__main__":
         payload_serialized = client.recv(SOCKET_SIZE)
         payload = pickle.loads(payload_serialized)
         question_encrypted = payload[1]
-        encryption = Fernet(payload[0])
+        encryption = Fernet(payload[0]
+        checksum = payload[2]
+
+        #Verify checksum
+        vChecksum = hashlib.md5(question_encrypted).hexdigest()
+        if checksum != vChecksum:
+            print('Checksum does not match')
+        
+        #Get question
         question = encryption.decrypt(question_encrypted).decode()
         print(question)
         
