@@ -1,4 +1,4 @@
-import argparse, tweepy, hashlib, pickle, socket, ClientKeys
+import argparse, tweepy, hashlib, pickle, socket, ClientKeys, sys
 from cryptography.fernet import Fernet
 
 if __name__ == "__main__":
@@ -51,11 +51,28 @@ if __name__ == "__main__":
             print('[Client 06]-Question payload: ', end='')
             print(payload)
 
-            # Send payload to server
+            # Send payload to server and recieve answer
+            pickled_payload = pickle.dumps(payload)
             print('[Client 07]-Sending question: ', end='')
-            sock.send(pickle.dumps(payload))
+            print(pickled_payload)
+            sock.send(pickled_payload)
             server_response = sock.recv(SOCKET_SIZE)
-            answer = pickle.loads(server_response)
+            answer_payload = pickle.loads(server_response)
+            print('[Client 08]-Received data: ', end='')
+            print(answer_payload)
+            answer_encrypted = server_response[0]
+            answer_checksum_expected = server_response[1]
+
+            # Verify checksum
+            answer_checksum_actual = hashlib.md5(answer).hexdigest()
+            if answer_checksum_actual != answer_checksum_expected:
+                print("Answer checksum is incorrect!")
+                sys.exit(1)
+            print('[Client 09]-Decrypt key: ', end='')
+            print(key)
+            answer = encryption.decrypt(answer_encrypted.decode())
+            print('[Client 10]-Plain text: ', end='')
+            print(answer)
 
     try:
         print('[Client 02]-Listening for tweets from Twitter API that contain questions')
