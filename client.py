@@ -78,6 +78,7 @@ if __name__ == "__main__":
             print(answer)
 
             # Play answer
+            # Example Code copied from https://cloud.ibm.com/apidocs/text-to-speech?code=python
             authenticator = IAMAuthenticator(ServerKeys.watsonKey)
             text_to_speech = TextToSpeechV1(authenticator=authenticator)
             text_to_speech.set_service_url(ServerKeys.watsonURL)
