@@ -1,7 +1,15 @@
-from ibm_watson import TextToSpeechV1
-from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
-import argparse, tweepy, hashlib, pickle, socket, ClientKeys, ServerKeys, sys, vlc
+import argparse
+import ClientKeys
+import hashlib
+import pickle
+import ServerKeys
+import socket
+import sys
+import tweepy
+import vlc
 from cryptography.fernet import Fernet
+from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+from ibm_watson import TextToSpeechV1
 
 if __name__ == "__main__":
     # Handle command-line arguments
